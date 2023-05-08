@@ -6,7 +6,9 @@ class FlutterNativePhotoViewer {
     return FlutterNativePhotoViewerPlatform.instance.getPlatformVersion();
   }
 
-  Future<String?> showGallery(List<PhotoItemData> list) {
-    return FlutterNativePhotoViewerPlatform.instance.showGallery(list);
+  Future<String?> showGallery(List<PhotoItemData> list,
+      {int initialIndex = 0}) {
+    return FlutterNativePhotoViewerPlatform.instance
+        .showGallery(list, initialIndex: initialIndex);
   }
 }
