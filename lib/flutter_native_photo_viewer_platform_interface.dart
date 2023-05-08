@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import 'flutter_native_photo_viewer_method_channel.dart';
@@ -29,4 +30,8 @@ abstract class FlutterNativePhotoViewerPlatform extends PlatformInterface {
   }
 
   Future<String?> showGallery(List<PhotoItemData> list, {int initialIndex = 0});
+
+  MethodChannel curMethodChannel();
+
+  Future<void> hide();
 }

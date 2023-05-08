@@ -6,9 +6,11 @@
 
 @interface FlutterNativePhotoViewerPlugin()  <YBImageBrowserDelegate>
 @property(nonatomic,strong) FlutterMethodChannel *curChannel;
+@property(nonatomic,strong) YBImageBrowser *browser;
 @end
 
 @implementation FlutterNativePhotoViewerPlugin
+
 + (void)registerWithRegistrar:(NSObject<FlutterPluginRegistrar>*)registrar {
   FlutterMethodChannel* channel = [FlutterMethodChannel
       methodChannelWithName:@"flutter_native_photo_viewer"
@@ -22,7 +24,9 @@
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
   if ([@"getPlatformVersion" isEqualToString:call.method]) {
     result([@"iOS " stringByAppendingString:[[UIDevice currentDevice] systemVersion]]);
-  }else if ([@"showGallery" isEqualToString:call.method]) {
+  } else if([@"hide" isEqualToString:call.method]){
+      [self.browser hide];
+  } else if ([@"showGallery" isEqualToString:call.method]) {
 
       NSMutableArray *datas = [NSMutableArray array];
       NSDictionary *argu =  call.arguments;
@@ -39,46 +43,43 @@
           NSString *imageWidth = [item objectForKey:@"imageWidth"];
           NSString *imageHeight = [item objectForKey:@"imageHeight"];
 
-
           if(isImage){
-              YBIBImageData *data = [YBIBImageData new];
-              data.imageURL = [NSURL URLWithString:url];
-//              data.shouldPreDecodeAsync = YES;
-//              data.imageName = @"打发舒服";
-              //data.projectiveView = [self viewAtIndex:idx];
-              [datas addObject:data];
+              if(filePath && [[NSFileManager defaultManager] fileExistsAtPath:filePath]){
+                  //本地图片
+                YBIBImageData *data = [YBIBImageData new];
+                  data.imageURL = [NSURL fileURLWithPath:filePath];
+                [datas addObject:data];
+              }else{
+                  YBIBImageData *data = [YBIBImageData new];
+                  data.imageURL = [NSURL URLWithString:url];
+    //              data.shouldPreDecodeAsync = YES;
+    //              data.imageName = @"打发舒服";
+                  //data.projectiveView = [self viewAtIndex:idx];
+                  [datas addObject:data];
+              }
           }else{
-              YBIBVideoData *data = [YBIBVideoData new];
-              data.videoURL = [NSURL URLWithString:url];
-//              data.projectiveView = [self viewAtIndex:idx];
-              [datas addObject:data];
+              if(filePath && [[NSFileManager defaultManager] fileExistsAtPath:filePath]){
+                YBIBVideoData *data = [YBIBVideoData new];
+                data.videoURL = [NSURL fileURLWithPath:filePath];
+                [datas addObject:data];
+              }else{
+                  YBIBVideoData *data = [YBIBVideoData new];
+                  data.videoURL = [NSURL URLWithString:url];
+                  [datas addObject:data];
+              }
           }
-//          if([type isEqualToString:@"local_image"]){
-//              YBIBImageData *data = [YBIBImageData new];
-//              data.imageURL = [NSURL URLWithString:url];
-//              data.projectiveView = [self viewAtIndex:idx];
-//              [datas addObject:data];
-//          }
-
-//          if([type isEqualToString:@"local_video"]){
-              // 本地视频
-//              NSString *path = [[NSBundle mainBundle] pathForResource:obj.stringByDeletingPathExtension ofType:obj.pathExtension];
-//              YBIBVideoData *data = [YBIBVideoData new];
-//              data.videoURL = [NSURL fileURLWithPath:path];
-//              data.projectiveView = [self viewAtIndex:idx];
-//              [datas addObject:data];
-//          }
 
       }
 
-      YBImageBrowser *browser = [YBImageBrowser new];
-      browser.dataSourceArray = datas;
-      browser.currentPage = index;
+      self.browser = [YBImageBrowser new];
+      self.browser.dataSourceArray = datas;
+      self.browser.currentPage = index;
 //      browser.supportedOrientations = UIInterfaceOrientationMaskPortrait | UIInterfaceOrientationMaskLandscapeLeft | UIInterfaceOrientationMaskLandscapeRight;
       // 只有一个保存操作的时候，可以直接右上角显示保存按钮
-      browser.defaultToolViewHandler.topView.operationType = -1;//YBIBTopViewOperationTypeMore;
-      [browser show];
-      browser.delegate = self;
+      self.browser.defaultToolViewHandler.topView.operationType = -1;//YBIBTopViewOperationTypeMore;
+      self.browser.delegate = self;
+      [self.browser show];
+      
 
       result(@"OK");
     }
@@ -98,10 +99,9 @@
         [data yb_saveToPhotoAlbum];
     }];
     UIAlertAction *pin = [UIAlertAction actionWithTitle:@"定位到消息" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
-
-        [weakSelf.curChannel invokeMethod:@"pin_message" arguments:@{@"message_id": @"test"}];
-
-//        [YBImageBrowser hide];
+        [weakSelf.curChannel invokeMethod:@"pin_message"
+                                arguments:@{@"index": @(weakSelf.browser.currentPage)}];
+        [weakSelf.browser hide];
     }];
 
     UIAlertAction *cancel = [UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:^(UIAlertAction * _Nonnull action) {
@@ -125,6 +125,10 @@
 
             UIAlertAction *dicern = [UIAlertAction actionWithTitle:@"识别图中二维码" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
 
+                [weakSelf.curChannel invokeMethod:@"scan_result"
+                                        arguments:@{@"qr_context": qrcodeFeature.messageString}];
+                [weakSelf.browser hide];
+                
                 NSLog(@"二维码信息： %@", qrcodeFeature.messageString);
 
             }];

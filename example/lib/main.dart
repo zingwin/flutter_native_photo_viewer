@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:flutter_native_photo_viewer/flutter_native_photo_viewer.dart';
 import 'package:flutter_native_photo_viewer/flutter_native_photo_viewer_method_channel.dart';
+import 'package:flutter_native_photo_viewer/flutter_native_photo_viewer_platform_interface.dart';
 
 void main() {
   runApp(const MyApp());
@@ -21,9 +22,30 @@ class _MyAppState extends State<MyApp> {
   final _photoViewerPlugin = FlutterNativePhotoViewer();
 
   @override
+  void dispose() {
+    // TODO: implement dispose
+    super.dispose();
+    _photoViewerPlugin.curMethodChannel().setMethodCallHandler(null);
+  }
+
+  @override
   void initState() {
     super.initState();
     initPlatformState();
+
+    _photoViewerPlugin
+        .curMethodChannel()
+        .setMethodCallHandler((MethodCall call) async {
+      if (call.method == "pin_message") {
+        final argu = call.arguments as Map;
+        final index = argu['index'];
+        print("定位到图片索引： $index");
+      } else if (call.method == "scan_result") {
+        final arg = call.arguments as Map;
+        final qr_context = arg['qr_context'];
+        print("二维码信息： $qr_context");
+      }
+    });
   }
 
   // Platform messages are asynchronous, so we initialize in an async method.

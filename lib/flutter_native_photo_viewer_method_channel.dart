@@ -82,4 +82,14 @@ class MethodChannelFlutterNativePhotoViewer
     });
     return null;
   }
+
+  @override
+  MethodChannel curMethodChannel() {
+    return methodChannel;
+  }
+
+  @override
+  Future<void> hide() async {
+    await methodChannel.invokeMethod<String?>('hide');
+  }
 }
