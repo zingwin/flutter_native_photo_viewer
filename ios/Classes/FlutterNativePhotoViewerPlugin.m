@@ -1,7 +1,7 @@
 #import "FlutterNativePhotoViewerPlugin.h"
 
-#import <YBImageBrowser/YBImageBrowser.h>
-#import <YBImageBrowser/YBIBVideoData.h>
+#import "YBImageBrowser.h"
+#import "YBIBVideoData.h"
 
 
 @interface FlutterNativePhotoViewerPlugin()  <YBImageBrowserDelegate>
